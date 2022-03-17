@@ -6,7 +6,7 @@ pub fn main() anyerror!void {
     var writer = fbs.writer();
 
     var buf: [512]u8 = undefined;
-    const pwd = try std.os.getcwd(buf[0..]);
+    var pwd = try std.os.getcwd(&buf);
 
     try writer.writeAll("\x1B[1m\x1B[36m.");
     try writer.writeAll(split_path(pwd));
@@ -37,6 +37,10 @@ fn split_path(path: []u8) []const u8 {
 fn git_branch(d: std.fs.Dir) ?[]u8 {
     const f = d.openFile(".git/HEAD", .{}) catch |err| {
         if (err == std.fs.File.OpenError.FileNotFound) {
+            // HACK: We don't want to recurse in root. Haven't found a better way.
+            var out_buf: [1]u8 = undefined;
+            if (std.mem.eql(u8, d.realpath("../", &out_buf) catch "", "/")) return null;
+
             var nd = d.openDir("../", .{}) catch return null;
             defer nd.close();
             return git_branch(nd);
@@ -53,8 +57,28 @@ fn git_branch(d: std.fs.Dir) ?[]u8 {
 }
 
 test "git branch" {
-    var branch = git_branch(std.fs.cwd());
-    try std.testing.expect(branch != null);
-    try std.testing.expect(branch.?.len > 2);
-    // try std.testing.expectEqualSlices(u8, "master", branch.?);
+    const expect = std.testing.expect;
+
+    const branch = git_branch(std.fs.cwd());
+    try expect(branch != null);
+    try expect(branch.?.len > 2);
+
+    // ensure we don't crash by recursively checking for .git folders
+    var root = try std.fs.openDirAbsolute("/dev", .{});
+    defer root.close();
+    try expect(git_branch(root) == null);
+}
+
+test "bench" {
+    const time = std.time;
+
+    if (std.os.getenv("BENCH")) |_| {
+        const start = time.milliTimestamp();
+        var i: usize = 0;
+        while (i < 1000) : (i += 1) {
+            try main();
+        }
+        const end = time.milliTimestamp();
+        std.debug.print("took {} ms\n", .{end - start});
+    }
 }
