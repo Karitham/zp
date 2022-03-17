@@ -5,7 +5,8 @@ Personal prompt; largely wip and all manual config for now.
 Looks like this.
 
 ```bash
-./$(PWD) on $(git branch --show-current) >>
+./karitham/zp on  master >>
+# ./../. on  $(git branch --show-current) >>
 ```
 
 Then it's set with a zsh precmd
