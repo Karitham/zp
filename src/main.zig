@@ -1,9 +1,12 @@
 const std = @import("std");
 
 pub fn main() anyerror!void {
+    var out_buf: [2048]u8 = undefined;
+    var fbs = std.io.fixedBufferStream(&out_buf);
+    var writer = fbs.writer();
+
     var buf: [512]u8 = undefined;
     const pwd = try std.os.getcwd(buf[0..]);
-    var writer = std.io.getStdOut().writer();
 
     try writer.writeAll("\x1B[1m\x1B[36m.");
     try writer.writeAll(split_path(pwd));
@@ -15,6 +18,8 @@ pub fn main() anyerror!void {
         try writer.writeAll("\x1B[0m");
     }
     try writer.writeAll("\x1B[1m\x1B[32m >> \x1B[0m");
+
+    try std.io.getStdOut().writeAll(fbs.getWritten());
 }
 
 fn split_path(path: []u8) []const u8 {
@@ -41,7 +46,7 @@ fn git_branch(d: std.fs.Dir) ?[]u8 {
     defer f.close();
 
     var buf: [1024]u8 = undefined;
-    const size = f.readAll(buf[0..]) catch return null;
+    const size = f.readAll(&buf) catch return null;
     if (std.mem.startsWith(u8, buf[0..size], "ref: refs/heads/")) return buf[16 .. size - 1]; //newline
 
     return null;
