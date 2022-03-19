@@ -1,10 +1,42 @@
 const std = @import("std");
 
-pub fn main() anyerror!void {
+pub fn main() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var argIt = try std.process.argsWithAllocator(gpa.allocator());
+    defer argIt.deinit();
+
+    const progName = argIt.next();
+    while (argIt.next()) |arg| {
+        if (std.mem.eql(u8, "prompt", arg))
+            return drawPrompt()
+        else if (std.mem.eql(u8, "hook", arg))
+            return zshHook()
+        else
+            return std.io.getStdErr().writer().print("Unknown command: {s}\n", .{arg});
+    }
+
+    return std.io.getStdErr().writer().print(
+        \\Usage: {s} <command>
+        \\Commands:
+        \\    prompt - display prompt
+        \\    hook - hook into zsh
+        \\
+    , .{progName.?});
+}
+
+fn zshHook() !void {
+    const hook = @embedFile("hooks/hook.zsh");
+    try std.io.getStdOut().writeAll(hook);
+}
+
+fn drawPrompt() !void {
     var out_buf: [2048]u8 = undefined;
     var fbs = std.io.fixedBufferStream(&out_buf);
-    var writer = fbs.writer();
+    try prompt(fbs.writer());
+    try std.io.getStdOut().writeAll(fbs.getWritten());
+}
 
+fn prompt(writer: anytype) !void {
     var buf: [512]u8 = undefined;
     var pwd = try std.os.getcwd(&buf);
 
@@ -18,8 +50,6 @@ pub fn main() anyerror!void {
         try writer.writeAll("\x1B[0m");
     }
     try writer.writeAll("\x1B[1m\x1B[32m >> \x1B[0m");
-
-    try std.io.getStdOut().writeAll(fbs.getWritten());
 }
 
 fn split_path(path: []u8) []const u8 {

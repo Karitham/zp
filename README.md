@@ -9,11 +9,4 @@ Looks like this.
 # ./../. on  $(git branch --show-current) >>
 ```
 
-Then it's set with a zsh precmd
-
-```zsh
-function set_zp() {
-    PROMPT="$(zp)"
-}
-[ ! "$TERM" = "linux" ] && precmd_functions+=(set_zp)
-```
+In zsh, you can then set it like `eval "$(zp hook)"`
