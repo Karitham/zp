@@ -1,4 +1,6 @@
 const std = @import("std");
+const module = @import("module.zig");
+const term = @import("ansi-term");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -32,83 +34,41 @@ fn zshHook() !void {
 fn drawPrompt() !void {
     var out_buf: [2048]u8 = undefined;
     var fbs = std.io.fixedBufferStream(&out_buf);
-    try prompt(fbs.writer());
+    try prompt(fbs.writer(), module.enabled);
     try std.io.getStdOut().writeAll(fbs.getWritten());
 }
 
-fn prompt(writer: anytype) !void {
-    var buf: [512]u8 = undefined;
-    var pwd = try std.os.getcwd(&buf);
-
-    try writer.writeAll("\x1B[1m\x1B[36m.");
-    try writer.writeAll(split_path(pwd));
-    try writer.writeAll("\x1B[0m");
-
-    if (git_branch(std.fs.cwd())) |branch| {
-        try writer.writeAll(" on \x1B[1m\x1B[35m ");
-        try writer.writeAll(branch);
-        try writer.writeAll("\x1B[0m");
+fn prompt(writer: anytype, m: []const module.Module) !void {
+    var style: ?term.Style = null;
+    inline for (m) |mod| {
+        style = mod.print(writer, style);
     }
-    try writer.writeAll("\x1B[1m\x1B[32m >> \x1B[0m");
-}
-
-fn split_path(path: []u8) []const u8 {
-    const it = std.mem.lastIndexOf(u8, path, "/");
-    if (it) |it1| {
-        const it2 = std.mem.lastIndexOf(u8, path[0..it1], "/");
-        if (it2) |it3| {
-            return path[it3..];
-        }
-        return path[it1..];
-    }
-    return path;
-}
-
-fn git_branch(d: std.fs.Dir) ?[]u8 {
-    const f = d.openFile(".git/HEAD", .{}) catch |err| {
-        if (err == std.fs.File.OpenError.FileNotFound) {
-            // HACK: We don't want to recurse in root. Haven't found a better way.
-            var out_buf: [1]u8 = undefined;
-            if (std.mem.eql(u8, d.realpath("../", &out_buf) catch "", "/")) return null;
-
-            var nd = d.openDir("../", .{}) catch return null;
-            defer nd.close();
-            return git_branch(nd);
-        }
-        return null;
-    };
-    defer f.close();
-
-    var buf: [1024]u8 = undefined;
-    const size = f.readAll(&buf) catch return null;
-    if (std.mem.startsWith(u8, buf[0..size], "ref: refs/heads/")) return buf[16 .. size - 1]; //newline
-
-    return null;
-}
-
-test "git branch" {
-    const expect = std.testing.expect;
-
-    const branch = git_branch(std.fs.cwd());
-    try expect(branch != null);
-    try expect(branch.?.len > 2);
-
-    // ensure we don't crash by recursively checking for .git folders
-    var root = try std.fs.openDirAbsolute("/dev", .{});
-    defer root.close();
-    try expect(git_branch(root) == null);
+    try term.updateStyle(writer, term.Style{}, style);
 }
 
 test "bench" {
     const time = std.time;
 
     if (std.os.getenv("BENCH")) |_| {
+        const run_count = 100000;
+        var buf = std.ArrayList(u8).init(std.testing.allocator);
+        try buf.ensureTotalCapacity(2048);
+        defer buf.deinit();
+
         const start = time.milliTimestamp();
         var i: usize = 0;
-        while (i < 1000) : (i += 1) {
-            try main();
+        while (i < run_count) : (i += 1) {
+            defer buf.clearRetainingCapacity();
+            try prompt(buf.writer(), module.enabled);
         }
         const end = time.milliTimestamp();
-        std.debug.print("took {} ms\n", .{end - start});
+        std.debug.print(
+            "took {} ms for {} runs, avg: {d} ms/run\n",
+            .{
+                end - start,
+                run_count,
+                @intToFloat(f64, end - start) / @intToFloat(f64, run_count),
+            },
+        );
     }
 }

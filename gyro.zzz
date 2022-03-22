@@ -1,0 +1,6 @@
+deps:
+  ansi-term:
+    git:
+      url: "https://github.com/ziglibs/ansi-term.git"
+      ref: c0f0ee3dd34130b55e5cca6b736816f85db34068
+      root: src/main.zig
