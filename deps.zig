@@ -17,8 +17,16 @@ pub const pkgs = struct {
         },
     };
 
+    pub const @"zig-libgit2" = Pkg{
+        .name = "zig-libgit2",
+        .path = FileSource{
+            .path = ".gyro/zig-libgit2-leecannon-github.com-ff363b86/pkg/src/git.zig",
+        },
+    };
+
     pub fn addAllTo(artifact: *std.build.LibExeObjStep) void {
         artifact.addPackage(pkgs.@"ansi-term");
         artifact.addPackage(pkgs.glob);
+        artifact.addPackage(pkgs.@"zig-libgit2");
     }
 };

@@ -48,30 +48,30 @@ fn prompt(writer: anytype, alloc: std.mem.Allocator, m: []const mod.Module) !voi
 }
 
 test "bench" {
+    if (std.os.getenv("BENCH") == null) return;
+
     const time = std.time;
+    const run_count = 2000;
 
-    if (std.os.getenv("BENCH")) |_| {
-        const run_count = 10000;
-        var buf = std.ArrayList(u8).init(std.testing.allocator);
-        try buf.ensureTotalCapacity(2048);
-        defer buf.deinit();
+    var buf = std.ArrayList(u8).init(std.testing.allocator);
+    try buf.ensureTotalCapacity(2048);
+    defer buf.deinit();
 
-        const start = time.milliTimestamp();
-        var i: usize = 0;
-        while (i < run_count) : (i += 1) {
-            defer buf.clearRetainingCapacity();
-            try prompt(buf.writer(), std.testing.allocator, mod.enabled);
-        }
-        const end = time.milliTimestamp();
-        std.debug.print(
-            "took {} ms for {} runs, avg: {d} ms/run\n",
-            .{
-                end - start,
-                run_count,
-                @intToFloat(f64, end - start) / @intToFloat(f64, run_count),
-            },
-        );
+    const start = time.milliTimestamp();
+    var i: usize = 0;
+    while (i < run_count) : (i += 1) {
+        defer buf.clearRetainingCapacity();
+        try prompt(buf.writer(), std.testing.allocator, mod.enabled);
     }
+    const end = time.milliTimestamp();
+    std.debug.print(
+        "took {} ms for {} runs, avg: {d} ms/run\n",
+        .{
+            end - start,
+            run_count,
+            @intToFloat(f64, end - start) / @intToFloat(f64, run_count),
+        },
+    );
 }
 
 test "tests" {

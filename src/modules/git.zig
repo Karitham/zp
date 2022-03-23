@@ -1,6 +1,7 @@
 const std = @import("std");
 const term = @import("ansi-term");
 const mod = @import("../module.zig");
+const git = @import("zig-libgit2");
 
 pub const module = mod.Module{
     .name = "git",
@@ -10,8 +11,11 @@ pub const module = mod.Module{
                 .foreground = term.Color.Magenta,
                 .font_style = term.FontStyle.bold,
             };
-            var buf: [1024]u8 = undefined;
-            if (gitBranch(std.fs.cwd(), &buf)) |branch| {
+
+            var git_meta = try GitMetadata.init(ctx.alloc);
+            defer git_meta.deinit();
+
+            if (git_meta.branch_name) |branch| {
                 try term.updateStyle(writer, git_style, ctx.last_style);
                 ctx.last_style = git_style;
                 try writer.print("  {s}", .{branch});
@@ -20,41 +24,44 @@ pub const module = mod.Module{
     }.print,
 };
 
-fn gitBranch(d: std.fs.Dir, buf: []u8) ?[]u8 {
-    const f = d.openFile(".git/HEAD", .{}) catch |err| {
-        if (err == std.fs.File.OpenError.FileNotFound) {
-            // HACK: We don't want to recurse in root. Haven't found a better way.
-            var is_root: [1]u8 = undefined;
-            if (std.mem.eql(u8, d.realpath(".", &is_root) catch "", "/")) return null;
+const GitMetadata = struct {
+    branch_name: ?[]u8 = null,
 
-            var nd = d.openDir("..", .{}) catch return null;
-            defer nd.close();
-            return gitBranch(nd, buf);
-        }
-        return null;
-    };
-    defer f.close();
+    alloc: std.mem.Allocator,
 
-    if (f.reader().readUntilDelimiterOrEof(buf, '\n') catch return null) |b| {
-        if (std.mem.startsWith(u8, b, "ref: refs/heads/")) {
-            return b[16..b.len];
-        }
+    fn init(alloc: std.mem.Allocator) !GitMetadata {
+        var gm: GitMetadata = GitMetadata{
+            .alloc = alloc,
+        };
+
+        const handle = try git.init();
+        defer handle.deinit();
+
+        var repo: *git.Repository = try handle.repositoryOpenExtended("./", .{}, "/");
+        defer repo.deinit();
+
+        var head = try repo.head();
+        defer head.deinit();
+
+        const name = try head.nameGet();
+        gm.branch_name = try alloc.dupe(u8, name);
+
+        return gm;
     }
 
-    return null;
-}
+    inline fn deinit(gm: GitMetadata) void {
+        if (gm.branch_name) |branch| {
+            gm.alloc.free(branch);
+        }
+    }
+};
 
 test "git branch" {
     const expect = std.testing.expect;
+    var git_meta = try GitMetadata.init(std.testing.allocator);
+    defer git_meta.deinit();
 
-    var buf: [1024]u8 = undefined;
-    const branch = gitBranch(std.fs.cwd(), &buf);
-    try expect(branch != null);
-    try expect(branch.?.len > 2);
+    try expect(git_meta.branch_name != null);
+    try expect(git_meta.branch_name.?.len > 2);
     // try std.testing.expectEqualSlices(u8, "master", branch.?);
-
-    // ensure we don't crash by recursively checking for .git folders
-    var root = try std.fs.openDirAbsolute("/dev", .{});
-    defer root.close();
-    try expect(gitBranch(root, &buf) == null);
 }

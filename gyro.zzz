@@ -9,3 +9,8 @@ deps:
       url: "https://github.com/mattnite/glob.git"
       ref: 7d17d5515d4151eb4487cb6d460a66b1330e902e
       root: src/main.zig
+  zig-libgit2:
+    git:
+      url: "https://github.com/leecannon/zig-libgit2.git"
+      ref: ff363b86952ca8d4f42524805ce9ef5819755c6b
+      root: src/git.zig

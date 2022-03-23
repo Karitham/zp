@@ -15,6 +15,7 @@ pub fn build(b: *std.build.Builder) void {
     const exe = b.addExecutable("zp", "src/main.zig");
     exe.setTarget(target);
     exe.setBuildMode(mode);
+    addLibGit(exe);
     pkgs.addAllTo(exe);
     exe.install();
 
@@ -30,8 +31,14 @@ pub fn build(b: *std.build.Builder) void {
     const exe_tests = b.addTest("src/main.zig");
     exe_tests.setTarget(target);
     exe_tests.setBuildMode(mode);
+    addLibGit(exe_tests);
     pkgs.addAllTo(exe_tests);
 
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&exe_tests.step);
+}
+
+pub fn addLibGit(exe: *std.build.LibExeObjStep) void {
+    exe.linkLibC();
+    exe.linkSystemLibrary("git2");
 }

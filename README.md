@@ -10,3 +10,5 @@ Looks like this.
 ```
 
 In zsh, you can then set it like `eval "$(zp hook)"`
+
+It's dependant on libgit2 for git stuff.
