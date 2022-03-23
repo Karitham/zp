@@ -18,15 +18,18 @@ pub const module = mod.Module{
                 .font_style = term.FontStyle.bold,
             };
 
-            if (try getZigVersion(ctx.alloc)) |zv| {
+            if (try getZigVersion(ctx.alloc)) |v| {
+                defer ctx.alloc.free(v);
                 try term.updateStyle(writer, zig_style, ctx.last_style);
                 ctx.last_style = zig_style;
-                try writer.print(" ⚡️{s}", .{zv});
+                try writer.print(" ⚡️{s}", .{v});
             }
         }
     }.print,
 };
 
+/// Returns the version of zig if in path.
+/// Caller owns returned memory.
 fn getZigVersion(alloc: std.mem.Allocator) !?[]const u8 {
     var proc = try std.ChildProcess.init(&.{ "zig", "version" }, alloc);
     defer proc.deinit();
@@ -44,7 +47,7 @@ fn getZigVersion(alloc: std.mem.Allocator) !?[]const u8 {
             _ = it.next();
             _ = it.next();
 
-            return buf[0 .. it.index.? - 1];
+            return try alloc.dupe(u8, buf[0 .. it.index.? - 1]);
         }
     }
 

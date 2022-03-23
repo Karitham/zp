@@ -10,7 +10,8 @@ pub const module = mod.Module{
                 .foreground = term.Color.Magenta,
                 .font_style = term.FontStyle.bold,
             };
-            if (gitBranch(std.fs.cwd())) |branch| {
+            var buf: [1024]u8 = undefined;
+            if (gitBranch(std.fs.cwd(), &buf)) |branch| {
                 try term.updateStyle(writer, git_style, ctx.last_style);
                 ctx.last_style = git_style;
                 try writer.print("  {s}", .{branch});
@@ -19,7 +20,7 @@ pub const module = mod.Module{
     }.print,
 };
 
-fn gitBranch(d: std.fs.Dir) ?[]u8 {
+fn gitBranch(d: std.fs.Dir, buf: []u8) ?[]u8 {
     const f = d.openFile(".git/HEAD", .{}) catch |err| {
         if (err == std.fs.File.OpenError.FileNotFound) {
             // HACK: We don't want to recurse in root. Haven't found a better way.
@@ -28,15 +29,13 @@ fn gitBranch(d: std.fs.Dir) ?[]u8 {
 
             var nd = d.openDir("..", .{}) catch return null;
             defer nd.close();
-            return gitBranch(nd);
+            return gitBranch(nd, buf);
         }
         return null;
     };
     defer f.close();
 
-    var big_buf: [1024]u8 = undefined;
-    const buf = f.reader().readUntilDelimiterOrEof(&big_buf, '\n') catch return null;
-    if (buf) |b| {
+    if (f.reader().readUntilDelimiterOrEof(buf, '\n') catch return null) |b| {
         if (std.mem.startsWith(u8, b, "ref: refs/heads/")) {
             return b[16..b.len];
         }
@@ -48,7 +47,8 @@ fn gitBranch(d: std.fs.Dir) ?[]u8 {
 test "git branch" {
     const expect = std.testing.expect;
 
-    const branch = gitBranch(std.fs.cwd());
+    var buf: [1024]u8 = undefined;
+    const branch = gitBranch(std.fs.cwd(), &buf);
     try expect(branch != null);
     try expect(branch.?.len > 2);
     // try std.testing.expectEqualSlices(u8, "master", branch.?);
@@ -56,5 +56,5 @@ test "git branch" {
     // ensure we don't crash by recursively checking for .git folders
     var root = try std.fs.openDirAbsolute("/dev", .{});
     defer root.close();
-    try expect(gitBranch(root) == null);
+    try expect(gitBranch(root, &buf) == null);
 }
