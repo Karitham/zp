@@ -3,6 +3,7 @@ const git = @import("modules/git.zig");
 const path = @import("modules/path.zig");
 const zig = @import("modules/zig.zig");
 const go = @import("modules/go.zig");
+const node = @import("modules/node.zig");
 const symbol = @import("modules/symbol.zig");
 const term = @import("ansi-term");
 
@@ -10,6 +11,7 @@ pub var enabled = &.{
     path.module,
     zig.module,
     go.module,
+    node.module,
     git.module,
     symbol.module,
 };
@@ -33,6 +35,7 @@ pub const Module = struct {
 test "tests" {
     _ = @import("modules/git.zig");
     _ = @import("modules/go.zig");
+    _ = @import("modules/node.zig");
     _ = @import("modules/zig.zig");
     _ = @import("modules/path.zig");
     _ = @import("modules/symbol.zig");
