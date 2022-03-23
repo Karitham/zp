@@ -4,3 +4,8 @@ deps:
       url: "https://github.com/ziglibs/ansi-term.git"
       ref: c0f0ee3dd34130b55e5cca6b736816f85db34068
       root: src/main.zig
+  glob:
+    git:
+      url: "https://github.com/mattnite/glob.git"
+      ref: 7d17d5515d4151eb4487cb6d460a66b1330e902e
+      root: src/main.zig

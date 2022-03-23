@@ -10,7 +10,15 @@ pub const pkgs = struct {
         },
     };
 
+    pub const glob = Pkg{
+        .name = "glob",
+        .path = FileSource{
+            .path = ".gyro/glob-mattnite-github.com-7d17d551/pkg/src/main.zig",
+        },
+    };
+
     pub fn addAllTo(artifact: *std.build.LibExeObjStep) void {
         artifact.addPackage(pkgs.@"ansi-term");
+        artifact.addPackage(pkgs.glob);
     }
 };

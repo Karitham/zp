@@ -1,16 +1,18 @@
 const std = @import("std");
-const module = @import("module.zig");
+const mod = @import("module.zig");
 const term = @import("ansi-term");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+
     var argIt = try std.process.argsWithAllocator(gpa.allocator());
     defer argIt.deinit();
 
     const progName = argIt.next();
     while (argIt.next()) |arg| {
         if (std.mem.eql(u8, "prompt", arg))
-            return drawPrompt()
+            return drawPrompt(gpa.allocator())
         else if (std.mem.eql(u8, "hook", arg))
             return zshHook()
         else
@@ -31,26 +33,25 @@ fn zshHook() !void {
     try std.io.getStdOut().writeAll(hook);
 }
 
-fn drawPrompt() !void {
-    var out_buf: [2048]u8 = undefined;
+fn drawPrompt(alloc: std.mem.Allocator) !void {
+    var out_buf: [2 * 1024]u8 = undefined;
     var fbs = std.io.fixedBufferStream(&out_buf);
-    try prompt(fbs.writer(), module.enabled);
+    try prompt(fbs.writer(), alloc, mod.enabled);
     try std.io.getStdOut().writeAll(fbs.getWritten());
 }
 
-fn prompt(writer: anytype, m: []const module.Module) !void {
-    var style: ?term.Style = null;
-    inline for (m) |mod| {
-        style = mod.print(writer, style);
-    }
-    try term.updateStyle(writer, term.Style{}, style);
+fn prompt(writer: anytype, alloc: std.mem.Allocator, m: []const mod.Module) !void {
+    var ctx = mod.Context.init(alloc);
+
+    inline for (m) |mo| mo.print(writer, &ctx) catch {};
+    try term.updateStyle(writer, term.Style{}, ctx.last_style);
 }
 
 test "bench" {
     const time = std.time;
 
     if (std.os.getenv("BENCH")) |_| {
-        const run_count = 100000;
+        const run_count = 10000;
         var buf = std.ArrayList(u8).init(std.testing.allocator);
         try buf.ensureTotalCapacity(2048);
         defer buf.deinit();
@@ -59,7 +60,7 @@ test "bench" {
         var i: usize = 0;
         while (i < run_count) : (i += 1) {
             defer buf.clearRetainingCapacity();
-            try prompt(buf.writer(), module.enabled);
+            try prompt(buf.writer(), std.testing.allocator, mod.enabled);
         }
         const end = time.milliTimestamp();
         std.debug.print(
@@ -71,4 +72,9 @@ test "bench" {
             },
         );
     }
+}
+
+test "tests" {
+    _ = @import("module.zig");
+    _ = @import("utils.zig");
 }

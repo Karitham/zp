@@ -1,22 +1,20 @@
 const std = @import("std");
 const term = @import("ansi-term");
-const Module = @import("../module.zig").Module;
+const mod = @import("../module.zig");
 
-pub const module = Module{
+pub const module = mod.Module{
     .name = "git",
     .print = struct {
-        fn print(writer: anytype, old: ?term.Style) ?term.Style {
+        fn print(writer: anytype, ctx: *mod.Context) anyerror!void {
+            const git_style = term.Style{
+                .foreground = term.Color.Magenta,
+                .font_style = term.FontStyle.bold,
+            };
             if (gitBranch(std.fs.cwd())) |branch| {
-                const git_style = term.Style{
-                    .foreground = term.Color.Magenta,
-                    .font_style = term.FontStyle.bold,
-                };
-                term.updateStyle(writer, term.Style{}, old) catch return old;
-                writer.writeAll(" on ") catch return term.Style{};
-                term.updateStyle(writer, git_style, term.Style{}) catch return term.Style{};
-                writer.print(" {s}", .{branch}) catch return git_style;
+                try term.updateStyle(writer, git_style, ctx.last_style);
+                ctx.last_style = git_style;
+                try writer.print("  {s}", .{branch});
             }
-            return null;
         }
     }.print,
 };
@@ -36,9 +34,13 @@ fn gitBranch(d: std.fs.Dir) ?[]u8 {
     };
     defer f.close();
 
-    var buf: [1024]u8 = undefined;
-    const size = f.readAll(&buf) catch return null;
-    if (std.mem.startsWith(u8, buf[0..size], "ref: refs/heads/")) return buf[16 .. size - 1]; //newline
+    var big_buf: [1024]u8 = undefined;
+    const buf = f.reader().readUntilDelimiterOrEof(&big_buf, '\n') catch return null;
+    if (buf) |b| {
+        if (std.mem.startsWith(u8, b, "ref: refs/heads/")) {
+            return b[16..b.len];
+        }
+    }
 
     return null;
 }
@@ -49,6 +51,7 @@ test "git branch" {
     const branch = gitBranch(std.fs.cwd());
     try expect(branch != null);
     try expect(branch.?.len > 2);
+    // try std.testing.expectEqualSlices(u8, "master", branch.?);
 
     // ensure we don't crash by recursively checking for .git folders
     var root = try std.fs.openDirAbsolute("/dev", .{});

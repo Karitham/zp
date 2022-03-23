@@ -1,19 +1,19 @@
 const std = @import("std");
 const term = @import("ansi-term");
-const Module = @import("../module.zig").Module;
+const mod = @import("../module.zig");
 
-pub const module = Module{
+pub const module = mod.Module{
     .name = "symbol",
     .print = struct {
-        fn print(writer: anytype, old: ?term.Style) ?term.Style {
+        fn print(writer: anytype, ctx: *mod.Context) anyerror!void {
             const symbol_style = term.Style{
                 .foreground = term.Color.Green,
                 .font_style = term.FontStyle.bold,
             };
 
-            term.updateStyle(writer, symbol_style, old) catch return old;
-            writer.writeAll(" >> ") catch return symbol_style;
-            return symbol_style;
+            try term.updateStyle(writer, symbol_style, ctx.last_style);
+            ctx.last_style = symbol_style;
+            try writer.writeAll(" >> ");
         }
     }.print,
 };

@@ -1,21 +1,23 @@
 const std = @import("std");
 const term = @import("ansi-term");
-const Module = @import("../module.zig").Module;
+const mod = @import("../module.zig");
 
-pub const module = Module{
+pub const module = mod.Module{
     .name = "path",
     .print = struct {
-        fn print(writer: anytype, old: ?term.Style) ?term.Style {
+        fn print(writer: anytype, ctx: *mod.Context) anyerror!void {
             const path_style = term.Style{
                 .foreground = term.Color.Cyan,
                 .font_style = term.FontStyle.bold,
             };
 
             var buf: [512]u8 = undefined;
-            var pwd = std.os.getcwd(&buf) catch return old;
-            term.updateStyle(writer, path_style, old) catch return old;
-            writer.print(".{s}", .{splitPath(pwd)}) catch return path_style;
-            return path_style;
+            var pwd = try std.os.getcwd(&buf);
+
+            try term.updateStyle(writer, path_style, ctx.last_style);
+            ctx.last_style = path_style;
+
+            try writer.print(".{s}", .{splitPath(pwd)});
         }
     }.print,
 };
