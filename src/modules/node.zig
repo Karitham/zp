@@ -3,29 +3,26 @@ const term = @import("ansi-term");
 const utils = @import("../utils.zig");
 const mod = @import("../module.zig");
 
-pub const module = mod.Module{
-    .name = "go",
-    .print = struct {
-        fn print(writer: anytype, ctx: *mod.Context) anyerror!void {
-            var cwd = try std.fs.cwd().openDir(".", .{ .iterate = true });
-            defer cwd.close();
+pub const module = mod.Module{ .name = "go", .print = print };
 
-            if (!try utils.containsAnyGlob(ctx.alloc, cwd, &.{ "package.json", "*.js", "*.ts", "*.jsx", "*.tsx" })) return;
+fn print(writer: anytype, ctx: *mod.Context) anyerror!void {
+    var cwd = try std.fs.cwd().openDir(".", .{ .iterate = true });
+    defer cwd.close();
 
-            const node_style = term.Style{
-                .foreground = term.Color.Green,
-                .font_style = term.FontStyle.bold,
-            };
+    if (!try utils.containsAnyGlob(ctx.alloc, cwd, &.{ "package.json", "*.js", "*.ts", "*.jsx", "*.tsx" })) return;
 
-            if (try getNodeVersion(ctx.alloc)) |v| {
-                defer ctx.alloc.free(v);
-                try term.updateStyle(writer, node_style, ctx.last_style);
-                ctx.last_style = node_style;
-                try writer.print(" 🟩 {s}", .{v});
-            }
-        }
-    }.print,
-};
+    const node_style = term.Style{
+        .foreground = term.Color.Green,
+        .font_style = term.FontStyle.bold,
+    };
+
+    if (try getNodeVersion(ctx.alloc)) |v| {
+        defer ctx.alloc.free(v);
+        try term.updateStyle(writer, node_style, ctx.last_style);
+        ctx.last_style = node_style;
+        try writer.print(" 🟩 {s}", .{v});
+    }
+}
 
 /// Returns the version of node if in path.
 /// Caller owns returned memory.

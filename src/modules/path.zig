@@ -2,25 +2,22 @@ const std = @import("std");
 const term = @import("ansi-term");
 const mod = @import("../module.zig");
 
-pub const module = mod.Module{
-    .name = "path",
-    .print = struct {
-        fn print(writer: anytype, ctx: *mod.Context) anyerror!void {
-            const path_style = term.Style{
-                .foreground = term.Color.Cyan,
-                .font_style = term.FontStyle.bold,
-            };
+pub const module = mod.Module{ .name = "path", .print = print };
 
-            var buf: [512]u8 = undefined;
-            var pwd = try std.os.getcwd(&buf);
+fn print(writer: anytype, ctx: *mod.Context) anyerror!void {
+    const path_style = term.Style{
+        .foreground = term.Color.Cyan,
+        .font_style = term.FontStyle.bold,
+    };
 
-            try term.updateStyle(writer, path_style, ctx.last_style);
-            ctx.last_style = path_style;
+    var buf: [512]u8 = undefined;
+    var pwd = try std.os.getcwd(&buf);
 
-            try writer.print(".{s}", .{splitPath(pwd)});
-        }
-    }.print,
-};
+    try term.updateStyle(writer, path_style, ctx.last_style);
+    ctx.last_style = path_style;
+
+    try writer.print(".{s}", .{splitPath(pwd)});
+}
 
 fn splitPath(path: []u8) []const u8 {
     const it = std.mem.lastIndexOf(u8, path, "/");

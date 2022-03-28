@@ -3,30 +3,27 @@ const term = @import("ansi-term");
 const utils = @import("../utils.zig");
 const mod = @import("../module.zig");
 
-pub const module = mod.Module{
-    .name = "zig",
-    .print = struct {
-        fn print(writer: anytype, ctx: *mod.Context) anyerror!void {
-            var cwd = try std.fs.cwd().openDir(".", .{ .iterate = true });
-            defer cwd.close();
+pub const module = mod.Module{ .name = "zig", .print = print };
 
-            const contains_file = try utils.containsAnyGlob(ctx.alloc, cwd, &.{"*.zig"});
-            if (!contains_file) return;
+fn print(writer: anytype, ctx: *mod.Context) anyerror!void {
+    var cwd = try std.fs.cwd().openDir(".", .{ .iterate = true });
+    defer cwd.close();
 
-            const zig_style = term.Style{
-                .foreground = term.Color.Yellow,
-                .font_style = term.FontStyle.bold,
-            };
+    const contains_file = try utils.containsAnyGlob(ctx.alloc, cwd, &.{"*.zig"});
+    if (!contains_file) return;
 
-            if (try getZigVersion(ctx.alloc)) |v| {
-                defer ctx.alloc.free(v);
-                try term.updateStyle(writer, zig_style, ctx.last_style);
-                ctx.last_style = zig_style;
-                try writer.print(" ⚡️{s}", .{v});
-            }
-        }
-    }.print,
-};
+    const zig_style = term.Style{
+        .foreground = term.Color.Yellow,
+        .font_style = term.FontStyle.bold,
+    };
+
+    if (try getZigVersion(ctx.alloc)) |v| {
+        defer ctx.alloc.free(v);
+        try term.updateStyle(writer, zig_style, ctx.last_style);
+        ctx.last_style = zig_style;
+        try writer.print(" ⚡️{s}", .{v});
+    }
+}
 
 /// Returns the version of zig if in path.
 /// Caller owns returned memory.

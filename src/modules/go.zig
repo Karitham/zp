@@ -3,29 +3,26 @@ const term = @import("ansi-term");
 const utils = @import("../utils.zig");
 const mod = @import("../module.zig");
 
-pub const module = mod.Module{
-    .name = "go",
-    .print = struct {
-        fn print(writer: anytype, ctx: *mod.Context) anyerror!void {
-            var cwd = try std.fs.cwd().openDir(".", .{ .iterate = true });
-            defer cwd.close();
+pub const module = mod.Module{ .name = "go", .print = print };
 
-            if (!try utils.containsAnyGlob(ctx.alloc, cwd, &.{ "go.mod", "*.go" })) return;
+fn print(writer: anytype, ctx: *mod.Context) anyerror!void {
+    var cwd = try std.fs.cwd().openDir(".", .{ .iterate = true });
+    defer cwd.close();
 
-            const go_style = term.Style{
-                .foreground = term.Color.Blue,
-                .font_style = term.FontStyle.bold,
-            };
+    if (!try utils.containsAnyGlob(ctx.alloc, cwd, &.{ "go.mod", "*.go" })) return;
 
-            if (try getGoVersion(ctx.alloc)) |v| {
-                defer ctx.alloc.free(v);
-                try term.updateStyle(writer, go_style, ctx.last_style);
-                ctx.last_style = go_style;
-                try writer.print(" 🐹 {s}", .{v});
-            }
-        }
-    }.print,
-};
+    const go_style = term.Style{
+        .foreground = term.Color.Blue,
+        .font_style = term.FontStyle.bold,
+    };
+
+    if (try getGoVersion(ctx.alloc)) |v| {
+        defer ctx.alloc.free(v);
+        try term.updateStyle(writer, go_style, ctx.last_style);
+        ctx.last_style = go_style;
+        try writer.print(" 🐹 {s}", .{v});
+    }
+}
 
 /// Returns the version of go if in path.
 /// Caller owns returned memory.
