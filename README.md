@@ -1,6 +1,8 @@
 # zp
 
-Personal prompt; largely wip and all manual config for now.
+![zp logo](.github/assets/zp-logo.png)
+
+A blazing fast prompt. Written in zig.
 
 Looks like this.
 
