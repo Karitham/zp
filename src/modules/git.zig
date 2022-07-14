@@ -16,7 +16,7 @@ fn print(writer: anytype, ctx: *mod.Context) anyerror!void {
 
     if (git_meta.branch() catch null) |branch| {
         defer ctx.alloc.free(branch);
-        try term.updateStyle(writer, git_style, ctx.last_style);
+        try mod.updateStyle(writer, git_style, ctx.last_style);
         ctx.last_style = git_style;
         try writer.print("  {s}", .{branch});
     }

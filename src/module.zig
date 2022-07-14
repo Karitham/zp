@@ -6,6 +6,7 @@ const go = @import("modules/go.zig");
 const node = @import("modules/node.zig");
 const symbol = @import("modules/symbol.zig");
 const term = @import("ansi-term");
+const root = @import("root");
 
 pub const enabled = &.{
     path.module,
@@ -26,6 +27,18 @@ pub const Context = struct {
         };
     }
 };
+
+pub const updateStyle = if (@hasDecl(root, "enable_color")) updateStyleEnabled else updateStyleDisabled;
+
+fn updateStyleDisabled(writer: anytype, new: term.Style, old: ?term.Style) !void {
+    _ = writer;
+    _ = new;
+    _ = old;
+}
+
+fn updateStyleEnabled(writer: anytype, new: term.Style, old: ?term.Style) !void {
+    try term.updateStyle(writer, new, old);
+}
 
 pub const Module = struct {
     name: []const u8,

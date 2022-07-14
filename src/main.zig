@@ -3,6 +3,8 @@ const mod = @import("module.zig");
 const term = @import("ansi-term");
 const Module = mod.Module;
 
+// const enable_color = true;
+
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
@@ -37,7 +39,9 @@ fn zshHook() !void {
 fn drawPrompt(alloc: std.mem.Allocator) !void {
     var out_buf: [8 * 1024]u8 = undefined;
     var fbs = std.io.fixedBufferStream(&out_buf);
-    try prompt(alloc, fbs.writer(), mod.enabled);
+    var writer = fbs.writer();
+
+    try prompt(alloc, writer, mod.enabled);
     try std.io.getStdOut().writeAll(fbs.getWritten());
 }
 
@@ -48,7 +52,7 @@ fn prompt(alloc: std.mem.Allocator, writer: anytype, modules: []const Module) !v
         m.print(writer, &ctx) catch {};
     }
 
-    try term.updateStyle(writer, term.Style{}, ctx.last_style);
+    try mod.updateStyle(writer, term.Style{}, ctx.last_style);
 }
 
 test "bench" {

@@ -19,7 +19,7 @@ fn print(writer: anytype, ctx: *mod.Context) anyerror!void {
 
     if (try getZigVersion(ctx.alloc)) |v| {
         defer ctx.alloc.free(v);
-        try term.updateStyle(writer, zig_style, ctx.last_style);
+        try mod.updateStyle(writer, zig_style, ctx.last_style);
         ctx.last_style = zig_style;
         try writer.print(" ⚡️{s}", .{v});
     }

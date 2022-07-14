@@ -18,7 +18,7 @@ fn print(writer: anytype, ctx: *mod.Context) anyerror!void {
 
     if (try getNodeVersion(ctx.alloc)) |v| {
         defer ctx.alloc.free(v);
-        try term.updateStyle(writer, node_style, ctx.last_style);
+        try mod.updateStyle(writer, node_style, ctx.last_style);
         ctx.last_style = node_style;
         try writer.print(" 🟩 {s}", .{v});
     }

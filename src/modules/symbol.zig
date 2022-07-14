@@ -10,7 +10,7 @@ fn print(writer: anytype, ctx: *mod.Context) anyerror!void {
         .font_style = term.FontStyle.bold,
     };
 
-    try term.updateStyle(writer, symbol_style, ctx.last_style);
+    try mod.updateStyle(writer, symbol_style, ctx.last_style);
     ctx.last_style = symbol_style;
     try writer.writeAll(" >> ");
 }

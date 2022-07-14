@@ -12,10 +12,8 @@ fn print(writer: anytype, ctx: *mod.Context) anyerror!void {
 
     var buf: [512]u8 = undefined;
     var pwd = try std.os.getcwd(&buf);
-
-    try term.updateStyle(writer, path_style, ctx.last_style);
+    try mod.updateStyle(writer, path_style, ctx.last_style);
     ctx.last_style = path_style;
-
     try writer.print(".{s}", .{splitPath(pwd)});
 }
 
