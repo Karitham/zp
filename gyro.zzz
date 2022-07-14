@@ -14,3 +14,8 @@ deps:
       url: "https://github.com/leecannon/zig-libgit2.git"
       ref: ff363b86952ca8d4f42524805ce9ef5819755c6b
       root: src/git.zig
+  libgit2:
+    git:
+      url: "https://github.com/mattnite/zig-libgit2.git"
+      ref: 0537beeaf38bee849e6a0240ce7b68f240c8385f
+      root: libgit2.zig

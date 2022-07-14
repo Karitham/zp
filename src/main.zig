@@ -1,6 +1,7 @@
 const std = @import("std");
 const mod = @import("module.zig");
 const term = @import("ansi-term");
+const Module = mod.Module;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -34,16 +35,19 @@ fn zshHook() !void {
 }
 
 fn drawPrompt(alloc: std.mem.Allocator) !void {
-    var out_buf: [2 * 1024]u8 = undefined;
+    var out_buf: [8 * 1024]u8 = undefined;
     var fbs = std.io.fixedBufferStream(&out_buf);
-    try prompt(fbs.writer(), alloc, mod.enabled);
+    try prompt(alloc, fbs.writer(), mod.enabled);
     try std.io.getStdOut().writeAll(fbs.getWritten());
 }
 
-fn prompt(writer: anytype, alloc: std.mem.Allocator, m: []const mod.Module) !void {
+fn prompt(alloc: std.mem.Allocator, writer: anytype, modules: []const Module) !void {
     var ctx = mod.Context.init(alloc);
 
-    inline for (m) |mo| mo.print(writer, &ctx) catch {};
+    inline for (modules) |m| {
+        m.print(writer, &ctx) catch {};
+    }
+
     try term.updateStyle(writer, term.Style{}, ctx.last_style);
 }
 

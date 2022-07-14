@@ -7,7 +7,7 @@ const node = @import("modules/node.zig");
 const symbol = @import("modules/symbol.zig");
 const term = @import("ansi-term");
 
-pub var enabled = &.{
+pub const enabled = &.{
     path.module,
     zig.module,
     go.module,
@@ -29,7 +29,7 @@ pub const Context = struct {
 
 pub const Module = struct {
     name: []const u8,
-    print: fn (writer: anytype, ctx: *Context) anyerror!void,
+    print: fn (anytype, *Context) anyerror!void,
 };
 
 test "tests" {

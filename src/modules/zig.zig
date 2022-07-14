@@ -28,8 +28,7 @@ fn print(writer: anytype, ctx: *mod.Context) anyerror!void {
 /// Returns the version of zig if in path.
 /// Caller owns returned memory.
 fn getZigVersion(alloc: std.mem.Allocator) !?[]const u8 {
-    var proc = try std.ChildProcess.init(&.{ "zig", "version" }, alloc);
-    defer proc.deinit();
+    var proc = std.ChildProcess.init(&.{ "zig", "version" }, alloc);
 
     proc.stdout_behavior = .Pipe;
 

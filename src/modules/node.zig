@@ -27,8 +27,7 @@ fn print(writer: anytype, ctx: *mod.Context) anyerror!void {
 /// Returns the version of node if in path.
 /// Caller owns returned memory.
 fn getNodeVersion(alloc: std.mem.Allocator) !?[]const u8 {
-    var proc = try std.ChildProcess.init(&.{ "node", "--version" }, alloc);
-    defer proc.deinit();
+    var proc = std.ChildProcess.init(&.{ "node", "--version" }, alloc);
 
     proc.stdout_behavior = .Pipe;
 
