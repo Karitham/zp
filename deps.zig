@@ -10,13 +10,6 @@ pub const pkgs = struct {
         },
     };
 
-    pub const glob = Pkg{
-        .name = "glob",
-        .source = FileSource{
-            .path = ".gyro/glob-mattnite-github.com-7d17d551/pkg/src/main.zig",
-        },
-    };
-
     pub const @"zig-libgit2" = Pkg{
         .name = "zig-libgit2",
         .source = FileSource{
@@ -33,7 +26,6 @@ pub const pkgs = struct {
 
     pub fn addAllTo(artifact: *std.build.LibExeObjStep) void {
         artifact.addPackage(pkgs.@"ansi-term");
-        artifact.addPackage(pkgs.glob);
         artifact.addPackage(pkgs.@"zig-libgit2");
         artifact.addPackage(pkgs.libgit2);
     }

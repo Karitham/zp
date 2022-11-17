@@ -3,26 +3,25 @@ const mem = std.mem;
 
 const open_flags = .{
     .access_sub_paths = true,
-    .iterate = true,
 };
 
 pub const Iterator = struct {
     allocator: mem.Allocator,
-    root: std.fs.Dir,
+    root: std.fs.IterableDir,
     segments: std.ArrayListUnmanaged([]const u8),
-    stack: std.ArrayListUnmanaged(std.fs.Dir.Iterator),
+    stack: std.ArrayListUnmanaged(std.fs.IterableDir.Iterator),
     components: std.ArrayListUnmanaged([]const u8),
     path: ?[]const u8,
     done: bool,
 
-    pub fn init(allocator: mem.Allocator, root: std.fs.Dir, pattern: []const u8) !Iterator {
+    pub fn init(allocator: mem.Allocator, root: std.fs.IterableDir, pattern: []const u8) !Iterator {
         if (pattern.len > 0 and pattern[0] == '/') return error.NoAbsolutePatterns;
 
         var ret = Iterator{
             .allocator = allocator,
             .root = root,
             .segments = std.ArrayListUnmanaged([]const u8){},
-            .stack = std.ArrayListUnmanaged(std.fs.Dir.Iterator){},
+            .stack = std.ArrayListUnmanaged(std.fs.IterableDir.Iterator){},
             .components = std.ArrayListUnmanaged([]const u8){},
             .path = null,
             .done = false,
@@ -102,7 +101,7 @@ pub const Iterator = struct {
                     },
                     .Directory => {
                         if (i < self.segments.items.len - 1) {
-                            const dir = try it.dir.openDir(entry.name, open_flags);
+                            const dir = try it.dir.openIterableDir(entry.name, open_flags);
                             try self.stack.append(self.allocator, dir.iterate());
                             try self.components.append(self.allocator, entry.name);
                             i += 1;

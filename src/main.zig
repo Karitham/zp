@@ -45,7 +45,7 @@ fn drawPrompt(alloc: std.mem.Allocator) !void {
     try std.io.getStdOut().writeAll(fbs.getWritten());
 }
 
-fn prompt(alloc: std.mem.Allocator, writer: anytype, modules: []const Module) !void {
+fn prompt(alloc: std.mem.Allocator, writer: anytype, comptime modules: []const Module) !void {
     var ctx = mod.Context.init(alloc);
 
     inline for (modules) |m| {

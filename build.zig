@@ -17,6 +17,7 @@ pub fn build(b: *std.build.Builder) void {
     exe.setBuildMode(mode);
     addLibGit(exe);
     pkgs.addAllTo(exe);
+    exe.addPackage(glob);
     exe.install();
 
     const run_cmd = exe.run();
@@ -33,6 +34,7 @@ pub fn build(b: *std.build.Builder) void {
     exe_tests.setBuildMode(mode);
     addLibGit(exe_tests);
     pkgs.addAllTo(exe_tests);
+    exe_tests.addPackage(glob);
 
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&exe_tests.step);
@@ -42,3 +44,10 @@ pub fn addLibGit(exe: *std.build.LibExeObjStep) void {
     exe.linkLibC();
     exe.linkSystemLibrary("git2");
 }
+
+const glob = std.build.Pkg{
+    .name = "glob",
+    .source = std.build.FileSource{
+        .path = "./lib/mattnite-glob/src/main.zig",
+    },
+};

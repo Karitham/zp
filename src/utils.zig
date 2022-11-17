@@ -1,7 +1,7 @@
 const std = @import("std");
 const glob = @import("glob");
 
-pub fn containsAnyGlob(alloc: std.mem.Allocator, root: std.fs.Dir, patterns: []const []const u8) !bool {
+pub fn containsAnyGlob(alloc: std.mem.Allocator, root: anytype, patterns: []const []const u8) !bool {
     for (patterns) |p| {
         var it = try glob.Iterator.init(alloc, root, p);
         defer it.deinit();
@@ -12,7 +12,7 @@ pub fn containsAnyGlob(alloc: std.mem.Allocator, root: std.fs.Dir, patterns: []c
 }
 
 test "containsAny" {
-    var cwd = try std.fs.cwd().openDir(".", .{ .iterate = true });
+    var cwd = try std.fs.cwd().openIterableDir(".");
     defer cwd.close();
 
     var buf_a: [1024 * 256]u8 = undefined;

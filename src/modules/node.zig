@@ -6,7 +6,7 @@ const mod = @import("../module.zig");
 pub const module = mod.Module{ .name = "go", .print = print };
 
 fn print(writer: anytype, ctx: *mod.Context) anyerror!void {
-    var cwd = try std.fs.cwd().openDir(".", .{ .iterate = true });
+    var cwd = try std.fs.cwd().openIterableDir(".", .{});
     defer cwd.close();
 
     if (!try utils.containsAnyGlob(ctx.alloc, cwd, &.{ "package.json", "*.js", "*.ts", "*.jsx", "*.tsx" })) return;
